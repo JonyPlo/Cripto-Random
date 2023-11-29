@@ -1,45 +1,23 @@
-import { useEffect, useReducer, useState } from 'react'
+import { useRandom } from './hooks/useRandom'
 import './App.css'
 
-const getRandomNumberFromApi = async (): Promise<number> => {
-  const res = await fetch(
-    'https://www.random.org/integers/?num=1&min=1&max=500&col=1&base=10&format=plain&rnd=new'
-  )
-  const numberString = await res.text()
-
-  // throw new Error('Aiudaaaa!!')
-  return +numberString
-}
-
 export const App = () => {
-  const [number, setNumber] = useState<number>()
-  const [isLoading, setIsLoading] = useState<boolean>(true)
-  const [error, setError] = useState<string>()
-  const [key, forceRefetch] = useReducer((x) => x + 1, 0)
-
-  useEffect(() => {
-    setIsLoading(true)
-    getRandomNumberFromApi()
-      .then(setNumber)
-      .catch((err) => setError(err.message))
-  }, [key])
-
-  useEffect(() => {
-    if (number) setIsLoading(false)
-  }, [number])
-
-  useEffect(() => {
-    if (error) setIsLoading(false)
-  }, [error])
+  const query = useRandom()
 
   return (
-    <div className='App-header'>
-      {isLoading ? <h2>Cargando...</h2> : <h2>Numero aleatorio: {number}</h2>}
+    <div className='App App-header'>
+      {/* Para useQuery, el isLoading solo se ejecta la primera vez cuando no
+      tenemos ninguna data, asi que para casos en los que se realicen peticiones mas de una vez usaremos isFetching, que devuelve true si la peticion que se realizo todavía esta en proceso y cambia a false cuando ya se obtiene la respuesta */}
+      {query.isFetching ? (
+        <h2>Cargando...</h2>
+      ) : (
+        <h2>Numero aleatorio: {query.data}</h2>
+      )}
 
-      {!isLoading && error && <h3>{error}</h3>}
+      {!query.isLoading && query.isError && <h3>{`${query.error}`}</h3>}
 
-      <button onClick={forceRefetch} disabled={isLoading}>
-        {isLoading ? '...' : 'Nuevo Numero'}
+      <button onClick={() => query.refetch()} disabled={query.isFetching}>
+        {query.isFetching ? '...' : 'Nuevo Numero'}
       </button>
     </div>
   )
